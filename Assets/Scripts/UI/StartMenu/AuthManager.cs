@@ -17,6 +17,13 @@ public class AuthManager : MonoBehaviour
     public Image loginCloseButton;
     public TMP_Text loginMessageText;
 
+    public Button passwordToggleButton;     // 눈 모양 버튼
+    public Sprite eyeOpenIcon;              // 눈 뜬 아이콘 스프라이트
+    public Sprite eyeClosedIcon;            // 눈 감은 아이콘 스프라이트
+
+    private bool isPasswordVisible = false; // 패스워드 보이는지 상태
+
+
     // 회원가입 관련 객체들
     public TMP_InputField signupUsernameInputField;
     public TMP_InputField signupIdInputField;
@@ -36,6 +43,7 @@ public class AuthManager : MonoBehaviour
     private string username;
     private string password;
     private string checkPassword;
+    private string step;
 
     private enum AuthMode { Login, SignUp }
     private AuthMode currentMode;
@@ -61,9 +69,17 @@ public class AuthManager : MonoBehaviour
         tutorialController = Assign(tutorialController, "TutorialController");
         userManager = UserManager.Instance;
 
+        // ID 입력 필드와 비밀번호 입력 필드에 대해 유효성 검사를 추가할 수 있습니다
+        loginIdInputField.onValidateInput += ValidateIDInput;
+        loginPasswdInputField.onValidateInput += ValidatePasswordInput;
+
+        // Toggle button에 대한 클릭 이벤트 설정
+        passwordToggleButton.onClick.AddListener(TogglePasswordVisibility);
+        UpdatePasswordToggleIcon(); // 초기 아이콘 설정
+
         // 로그인 이벤트 트리거 추가
         AddEventTrigger(loginCloseButton, (data) => OnBackButtonClicked(loginPopup));
-        AddEventTrigger(loginButton, (data) => OnAuthButtonClicked(AuthMode.Login));
+            AddEventTrigger(loginButton, (data) => OnAuthButtonClicked(AuthMode.Login));
 
         // 회원가입 이벤트 트리거 추가
         AddEventTrigger(signupCloseButton, (data) => OnBackButtonClicked(signupPopup));
@@ -71,6 +87,8 @@ public class AuthManager : MonoBehaviour
 
         currentMode = AuthMode.Login; // 초기 모드를 로그인으로 설정
         InitializePopup(); // 초기화
+
+        step = UserManager.Instance.GetUserStep(id);   // DB 업데이트 시 필요한 데이터
     }
 
     // 오브젝트 자동 할당
@@ -87,6 +105,63 @@ public class AuthManager : MonoBehaviour
             if (obj == null) Debug.LogError($"{objectName} 를 찾을 수 없습니다.");
         }
         return obj;
+    }
+
+    private char ValidateIDInput(string text, int charIndex, char addedChar)
+    {
+        // 숫자인 경우에만 입력을 허용
+        if (char.IsDigit(addedChar))
+        {
+            return addedChar;
+        }
+        // 숫자가 아닐 경우 빈 문자 반환으로 입력 차단
+        return '\0';
+    }
+
+    private char ValidatePasswordInput(string text, int charIndex, char addedChar)
+    {
+        // 영어 알파벳 소문자 또는 숫자인 경우에만 입력을 허용
+        if (char.IsLower(addedChar) || char.IsDigit(addedChar))
+        {
+            return addedChar;
+        }
+        // 그 외의 경우 빈 문자 반환으로 입력 차단
+        return '\0';
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        // 현재 비밀번호 가시성 상태를 토글
+        isPasswordVisible = !isPasswordVisible;
+
+        if (isPasswordVisible)
+        {
+            // 비밀번호 표시
+            loginPasswdInputField.contentType = TMP_InputField.ContentType.Standard;
+        }
+        else
+        {
+            // 비밀번호 숨기기
+            loginPasswdInputField.contentType = TMP_InputField.ContentType.Password;
+        }
+
+        // 변경 사항 적용
+        loginPasswdInputField.ForceLabelUpdate();
+
+        UpdatePasswordToggleIcon();
+    }
+
+    private void UpdatePasswordToggleIcon()
+    {
+        // 아이콘 스프라이트 변경
+        if (isPasswordVisible)
+        {
+            passwordToggleButton.image.sprite = eyeOpenIcon;
+        }
+        else
+        {
+            passwordToggleButton.image.sprite = eyeClosedIcon;
+        }
     }
 
     private void Update()
@@ -116,6 +191,16 @@ public class AuthManager : MonoBehaviour
             // 다음 입력 필드로 포커스 이동
             next?.Select();
         }
+
+        // 비밀번호 입력 필드에 포커스되어 있을 때 IME 끄기
+        if (loginPasswdInputField.isFocused || signUpPasswdInputField.isFocused || signUpCheckpasswdInputField.isFocused)
+        {
+            Input.imeCompositionMode = IMECompositionMode.Off;
+        }
+        else
+        {
+            Input.imeCompositionMode = IMECompositionMode.Auto;
+        }
     }
 
     // 첫번째 입력 필드를 찾는 함수
@@ -136,6 +221,7 @@ public class AuthManager : MonoBehaviour
     private void OnBackButtonClicked(GameObject popup)
     {
         Debug.Log("Back Button Clicked");
+        BtnSoundManager.Instance.PlayButtonSound();  // 사운드 추가
         InitializePopup(); // 팝업 초기화 (적혀있는 내용 삭제)
         popup.SetActive(false);
         mainMenuController.EnableMenuInteraction(); // 메뉴 버튼 상호작용 가능하게 설정
@@ -147,6 +233,7 @@ public class AuthManager : MonoBehaviour
     {
         currentMode = mode;
         Debug.Log($"{mode} Button Clicked");
+        BtnSoundManager.Instance.PlayButtonSound();
 
         // 입력된 ID 및 이름 가져오기
         if (mode == AuthMode.Login)
@@ -215,12 +302,12 @@ public class AuthManager : MonoBehaviour
             int tutorialStatus = userManager.GetUserTutorialStatus(id);
             if (tutorialStatus == 0)
             {
-                tutorialController.SetTutorialCompletionStatus(false);    
-                UserManager.Instance.AddUser(id, username, password, 1);      // 튜토리얼은 진행됐을 테니 미리 1로 전환
+                tutorialController.SetTutorialCompletionStatus(false);
+                UserManager.Instance.AddUser(id, username, password, 1, step[0], step[1], step[2]);      // 튜토리얼은 진행됐을 테니 미리 1로 전환
             }
             else
             {
-                tutorialController.SetTutorialCompletionStatus(true);    
+                tutorialController.SetTutorialCompletionStatus(true);
                 Debug.Log("Tutorial: 이미 true임");
             }
 
@@ -268,7 +355,7 @@ public class AuthManager : MonoBehaviour
             return;
         }
 
-        UserManager.Instance.AddUser(id, username, password, 0);
+        UserManager.Instance.AddUser(id, username, password, 0, 0, 0, 0);
         DisplayMessage("회원가입 성공!\n로그인 화면으로 이동해주세요.", Color.green);
         StartCoroutine(CompleteSignUp());
     }
@@ -311,6 +398,7 @@ public class AuthManager : MonoBehaviour
         EventTrigger trigger = image.gameObject.GetComponent<EventTrigger>() ?? image.gameObject.AddComponent<EventTrigger>();
         var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
         entry.callback.AddListener(action);
+        BtnSoundManager.Instance.PlayButtonSound();
         trigger.triggers.Add(entry);
     }
 

@@ -92,6 +92,7 @@ public class MinimapRaycaster : MonoBehaviour
         if (Input.GetMouseButtonDown(0) && minimapController.IsLargeMapOpen)
         {
             Debug.Log("Mouse button down detected on: " + clickable.name);
+            BtnSoundManager.Instance.PlayButtonSound();  // 쿨타임 패널 활성화 시 사운드 추가
             clickable.OnMouseDown(); // 오브젝트 클릭 처리
         }
     }

@@ -39,7 +39,8 @@ public class PolicyHospital : MonoBehaviour
             //Toggle 변경 시 UpdateWardCounts 호출
             closingtoggle[currentIndex].onValueChanged.AddListener(delegate {
                 TogglePairControl(closingtoggle[currentIndex], disinfectiontoggle[currentIndex], disinfectionText[currentIndex]);
-                if(closingtoggle[currentIndex].isOn)
+
+                if (closingtoggle[currentIndex].isOn)
                 {
                     Ward.wards[currentIndex].CloseWard();
                 }
@@ -72,6 +73,8 @@ public class PolicyHospital : MonoBehaviour
     void TogglePairControl(Toggle topToggle, Toggle bottomToggle, TextMeshProUGUI bottomText)
     {
         bottomToggle.interactable = topToggle.isOn;
+
+        BtnSoundManager.Instance.PlayButtonSound();
 
         bottomText.text = topToggle.isOn ? "소독 가능" : "";
         if (!topToggle.isOn)

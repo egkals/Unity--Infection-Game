@@ -66,4 +66,10 @@ public class RadialProgressbars : MonoBehaviour
         hospitalInfectionRateText.text = $"{hospitalInfectionRate:F1}%";
         hospitalInfectionRateBar.fillAmount = hospitalInfectionRate / 100;
     }
+
+    // 병원 전체 감염률을 반환하는 메서드
+    public float GetHospitalInfectionRate()
+    {
+        return hospitalInfectionRate;
+    }
 }

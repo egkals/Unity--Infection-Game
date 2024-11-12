@@ -273,7 +273,6 @@ public class PatientController : NPCController
                 doc.isEmpty = true;
 
                 // 진료비 수입 증가 임시 위치
-                // 진료비 : 10000
                 MoneyManager.Instance.IncreaseMoney(MoneyManager.MedicalFee);
                 monthlyReportUI = FindObjectOfType<MonthlyReportUI>();
                 monthlyReportUI.AddIncomeDetail("진료비", MoneyManager.MedicalFee);
@@ -809,9 +808,21 @@ public class PatientController : NPCController
     }
     public IEnumerator HospitalizationTimeCounter()
     {
-        yield return new WaitForSeconds(Random.Range(20f, 100f));
+        float randomTime = Random.Range(20f, 100f);
+        int dividedTime = Mathf.FloorToInt(randomTime / 10f);
+        yield return new WaitForSeconds(randomTime);
+
         isWaiting = true;
         StopCoroutine(InpatientMove());
+
+        MoneyManager.Instance.IncreaseMoney(MoneyManager.HospitalizationFee * dividedTime);
+
+        // 로그 추가 - 입원 환자의 수입 정보 확인
+        //Debug.Log($"입원 환자 {gameObject.name} 수입: {MoneyManager.HospitalizationFee * dividedTime} 며칠 : {dividedTime})");
+
+        monthlyReportUI = FindObjectOfType<MonthlyReportUI>();
+        monthlyReportUI.AddIncomeDetail("입원비", MoneyManager.HospitalizationFee * dividedTime);
+
         StartCoroutine(ExitHospital());
     }
     public IEnumerator QuarantineTimeCounter()

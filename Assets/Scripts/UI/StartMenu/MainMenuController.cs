@@ -2,53 +2,47 @@
 using TMPro;
 using UnityEngine.EventSystems;
 using System.Collections;
-using System.Collections.Generic;
 
 public class MainMenuController : MonoBehaviour
 {
     // 메뉴 텍스트 버튼 4개 참조
     public TextMeshProUGUI loginMenu;
-    public TextMeshProUGUI signupMenu; // LoadGameText를 AccountCreationText로 변경
+    public TextMeshProUGUI signupMenu;
     public TextMeshProUGUI settingMenu;
-    public TextMeshProUGUI ExitGameMenu;
+    public TextMeshProUGUI exitGameMenu;
 
     public GameObject loginCanvas;
     public GameObject signupCanvas;
     public GameObject settingWindow;
     public GameObject exitGameCanvas;
 
-    public float hoverScale = 1.1f;     // 확대 비율
-    public float scaleDuration = 0.1f;  // 확대/축소 애니메이션 시간
+    public float hoverScale = 1.1f;  // 확대 비율
+    public float scaleDuration = 0.1f; // 확대/축소 애니메이션 시간
     private bool isPopupActive = false; // 팝업 활성 상태를 확인하는 변수
 
     private void Start()
     {
+        // 자동 할당
         loginMenu = Assign(loginMenu, "LoginMenu");
         signupMenu = Assign(signupMenu, "SignUpMenu");
         settingMenu = Assign(settingMenu, "OptionMenu");
-        ExitGameMenu = Assign(ExitGameMenu, "ExitGameMenu");
+        exitGameMenu = Assign(exitGameMenu, "ExitGameMenu");
         loginCanvas = Assign(loginCanvas, "LoginCanvas");
         signupCanvas = Assign(signupCanvas, "SignUpCanvas");
         settingWindow = Assign(settingWindow, "SettingWindow");
         exitGameCanvas = Assign(exitGameCanvas, "ExitGameCanvas");
 
-        //// Canvas를 올바른 순서로 배치
-        //loginCanvas.transform.SetAsLastSibling();
-        //signupCanvas.transform.SetAsLastSibling();
-        //exitGameCanvas.transform.SetAsLastSibling();
-
         // 각 텍스트에 클릭 이벤트 및 마우스 오버 이벤트 추가
         AddEventTrigger(loginMenu, OnStartGameClicked);
         AddEventTrigger(signupMenu, OnAccountCreationClicked);
         AddEventTrigger(settingMenu, OnSettingsClicked);
-        AddEventTrigger(ExitGameMenu, OnQuitGameClicked);
+        AddEventTrigger(exitGameMenu, OnQuitGameClicked);
 
         // 텍스트 영역 들어오고 나가는 이벤트 추가
         AddHoverEvent(loginMenu);
         AddHoverEvent(signupMenu);
         AddHoverEvent(settingMenu);
-        AddHoverEvent(ExitGameMenu);
-
+        AddHoverEvent(exitGameMenu);
     }
 
     // 자동 할당 코드
@@ -72,7 +66,14 @@ public class MainMenuController : MonoBehaviour
     {
         EventTrigger trigger = text.gameObject.GetComponent<EventTrigger>() ?? text.gameObject.AddComponent<EventTrigger>();
         var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
-        entry.callback.AddListener((eventData) => { if (!isPopupActive) action(); });
+        entry.callback.AddListener((eventData) =>
+        {
+            if (!isPopupActive)
+            {
+                action();
+                BtnSoundManager.Instance.PlayButtonSound();
+            }
+        });
         trigger.triggers.Add(entry);
     }
 
@@ -97,10 +98,12 @@ public class MainMenuController : MonoBehaviour
     {
         StartCoroutine(ScaleText(text, hoverScale, scaleDuration));
     }
+
     private void OnPointerExit(TextMeshProUGUI text)
     {
         StartCoroutine(ScaleText(text, 1f, scaleDuration));
     }
+
     private IEnumerator ScaleText(TextMeshProUGUI text, float targetScale, float duration)
     {
         Vector3 initialScale = text.transform.localScale;
@@ -121,38 +124,42 @@ public class MainMenuController : MonoBehaviour
     private void OnStartGameClicked()
     {
         Debug.Log("Start Game Clicked");
+        BtnSoundManager.Instance.PlayButtonSound();
         loginCanvas.SetActive(true);    // 로그인 창 실행
-        isPopupActive = true; // 팝업 활성 상태로 설정
+        isPopupActive = true;           // 팝업 활성 상태로 설정
     }
 
     // 회원가입 메뉴 클릭
     private void OnAccountCreationClicked()
     {
         Debug.Log("Account Creation Clicked");
-        signupCanvas.SetActive(true);  // 회원가입 창 실행
-        isPopupActive = true; // 팝업 활성 상태로 설정
+        BtnSoundManager.Instance.PlayButtonSound();
+        signupCanvas.SetActive(true);   // 회원가입 창 실행
+        isPopupActive = true;           // 팝업 활성 상태로 설정
     }
 
     // 설정 메뉴 클릭
     private void OnSettingsClicked()
     {
         Debug.Log("Settings Clicked");
-        settingWindow.SetActive(true);// 설정 창 실행
+        BtnSoundManager.Instance.PlayButtonSound();
+        settingWindow.SetActive(true);  // 설정 창 실행
     }
 
     // 게임종료 메뉴 클릭
     private void OnQuitGameClicked()
     {
         Debug.Log("Quit Game Clicked");
+        BtnSoundManager.Instance.PlayButtonSound();
         exitGameCanvas.SetActive(true); // 게임종료 확인 창 실행
-        isPopupActive = true; // 팝업 활성 상태로 설정
+        isPopupActive = true;           // 팝업 활성 상태로 설정
     }
 
     // ExitGame 팝업 종료 버튼
-    // private 인 isPopupActive 관리 위해 여기서 사용
     public void ClosePopup(GameObject popupCanvas)
     {
         popupCanvas.SetActive(false);
+        BtnSoundManager.Instance.PlayButtonSound();
         isPopupActive = false; // 팝업 비활성 상태로 설정
     }
 

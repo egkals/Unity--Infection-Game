@@ -18,6 +18,8 @@ public class InfectionManager
     public int stage1InfectionProbability = 30;
     public int stage2InfectionProbability = 20;
 
+    private AudioManager audioManager;
+
     public void Init()
     {
         infectionProbability = stage1InfectionProbability;
@@ -26,7 +28,10 @@ public class InfectionManager
 
         allClearButton = Assign(allClearButton, "AllClearButton");
 
-        allClearButton.onClick.AddListener(() => DisinfectAllViruses());
+        allClearButton.onClick.AddListener(() => { DisinfectAllViruses(); BtnSoundManager.Instance.PlayButtonSound(); });
+
+        // AudioManager 참조 가져오기
+        audioManager = GameObject.FindObjectOfType<AudioManager>();
     }
     public void UpdateInfectionProbability()
     {
@@ -51,9 +56,9 @@ public class InfectionManager
     }
 
     // 병원 전체 감염률 계산
+    // 병원 전체 감염률 계산
     public float GetOverallInfectionRate(List<Ward> wards)
     {
-
         if (wards == null || wards.Count == 0)
         {
             return 0f; // 병동 목록이 없거나 병동이 하나도 없으면 감염률 0%
@@ -73,8 +78,11 @@ public class InfectionManager
             return 0f; // 병원 전체에 NPC가 없으면 감염률 0%
         }
 
-        return (totalInfected / totalNPCs) * 100f; // 전체 감염률을 퍼센트로 계산
+        float overallInfectionRate = (totalInfected / totalNPCs) * 100f; // 전체 감염률을 퍼센트로 계산
+
+        return overallInfectionRate;
     }
+
 
     public Dictionary<string,float> GetInfectionRateByRole()
     {

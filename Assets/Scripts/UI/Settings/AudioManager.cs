@@ -1,8 +1,13 @@
 ﻿using UnityEngine;
+using System.Collections;
+
 public class AudioManager : MonoBehaviour
 {
     public AudioSource backgroundMusic;
+    public AudioSource tenseBGM;
     public AudioSource[] sfxSources;
+
+    private RadialProgressbars radialProgressbars;
 
     private void Awake()
     {
@@ -37,6 +42,12 @@ public class AudioManager : MonoBehaviour
         SetMasterVolume(initialMasterVolume);
         SetMusicVolume(initialMusicVolume);
         SetSfxVolume(initialSfxVolume);
+
+        // RadialProgressbars 참조 가져오기
+        radialProgressbars = FindObjectOfType<RadialProgressbars>();
+
+        // 감염률 체크 주기적으로 호출
+        StartCoroutine(CheckInfectionRateRoutine());
     }
 
     public void SetMasterVolume(float volume)
@@ -67,6 +78,60 @@ public class AudioManager : MonoBehaviour
         foreach (var sfxSource in sfxSources)
         {
             sfxSource.volume = volume;
+        }
+    }
+
+    // 긴장감 있는 BGM으로 전환하는 함수 추가
+    public void SwitchToTenseBGM()
+    {
+        if (backgroundMusic.isPlaying)
+        {
+            backgroundMusic.Stop();
+        }
+
+        if (!tenseBGM.isPlaying)
+        {
+            tenseBGM.Play();
+            Debug.Log("Switched to tense background music.");
+        }
+    }
+
+    // 일반 배경음악으로 돌아가는 함수 추가
+    public void SwitchToNormalBGM()
+    {
+        if (tenseBGM.isPlaying)
+        {
+            tenseBGM.Stop();
+        }
+
+        if (!backgroundMusic.isPlaying)
+        {
+            backgroundMusic.Play();
+            Debug.Log("Switched to normal background music.");
+        }
+    }
+
+    // 감염률 체크 루틴 추가
+    IEnumerator CheckInfectionRateRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(5f); // 5초마다 체크
+
+            if (radialProgressbars != null)
+            {
+                float infectionRate = radialProgressbars.GetHospitalInfectionRate();
+                Debug.Log($"Current Hospital Infection Rate: {infectionRate}%");
+
+                if (infectionRate > 10f)
+                {
+                    SwitchToTenseBGM();
+                }
+                else
+                {
+                    SwitchToNormalBGM();
+                }
+            }
         }
     }
 }
