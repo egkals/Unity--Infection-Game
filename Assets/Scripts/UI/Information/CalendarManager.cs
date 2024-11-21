@@ -12,14 +12,16 @@ public class CalendarManager : MonoBehaviour
     private const int maxDaysInMonth = 28; // 한 달 최대 일 수
 
     private MonthlyReportUI monthlyReportUI;
+    ResearchDBManager researchDBManager;
     private readonly string[] monthNames = { "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec." };
 
     void Start()
     {
-        Debug.Log("Start 메소드 호출됨");
+        //Debug.Log("Start 메소드 호출됨");
         dateText = Assign(dateText, "DateText");
         monthText = Assign(monthText, "MonthText");
         monthlyReportUI = FindObjectOfType<MonthlyReportUI>();
+        researchDBManager = FindObjectOfType<ResearchDBManager>();
         UpdateMonthText();
     }
 
@@ -63,7 +65,7 @@ public class CalendarManager : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(10); // 10초 대기
+            yield return YieldInstructionCache.WaitForSeconds(10); // 10초 대기
             IncrementDay();
         }
     }
@@ -79,6 +81,13 @@ public class CalendarManager : MonoBehaviour
             currentDay = 1; // 한 달 최대 일 수 초과 시 초기화
             IncrementMonth();
         }
+
+        //currentDay가 6일 증가할 때마다(=현실에서 1분) ResearchDBManager의 dayCycleCounter 변수값 증가
+        if (currentDay % 6 == 0)
+        {
+            researchDBManager.dayCycleCounter++;
+        }
+
         UpdateDateText();
     }
 

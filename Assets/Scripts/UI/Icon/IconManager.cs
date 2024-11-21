@@ -54,7 +54,7 @@ public class IconManager : MonoBehaviour
 
     private void HandleInfectionStateChanged(InfectionState newStatus)
     {
-        if ((newStatus == InfectionState.CRE || newStatus == InfectionState.Covid) && (person.role == Role.Outpatient || person.role == Role.Inpatient))
+        if (newStatus != InfectionState.Normal && (person.role == Role.Outpatient || person.role == Role.Inpatient || person.role == Role.EmergencyPatient))
         {
             if (symptomCoroutine != null)
             {
@@ -94,26 +94,27 @@ public class IconManager : MonoBehaviour
     {
         if (iconCanvas != null)
         {
+            iconCanvas.gameObject.layer = gameObject.layer;
             iconCanvas.SetActive(true);
-            yield return new WaitForSeconds(2f);
+            yield return YieldInstructionCache.WaitForSeconds(2f);
             iconCanvas.SetActive(false);
         }
     }
 
     private IEnumerator ShowRandomSymptomIcon()
     {
-        while ((person.status == InfectionState.CRE || person.status == InfectionState.Covid) && person.role == Role.Outpatient)
+        while (person.status != InfectionState.Normal && (person.role == Role.Outpatient || person.role == Role.Inpatient || person.role == Role.EmergencyPatient))
         {
             int randomIndex = Random.Range(0, symptomSprites.Length);
 
             infectionIcon.sprite = symptomSprites[randomIndex];
             iconCanvas.gameObject.SetActive(true); // Canvas 활성화
 
-            yield return new WaitForSeconds(2); // 아이콘을 2초 동안 표시
+            yield return YieldInstructionCache.WaitForSeconds(2); // 아이콘을 2초 동안 표시
 
             iconCanvas.gameObject.SetActive(false); // Canvas 비활성화
 
-            yield return new WaitForSeconds(5); // 2초 대기
+            yield return YieldInstructionCache.WaitForSeconds(5); // 2초 대기
         }
     }
 

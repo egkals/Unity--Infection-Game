@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,7 +10,8 @@ public class InfectionManager
     public static InfectionManager Instance { get { return _instance; } }
     public Button allClearButton;
 
-    public int infectionProbability = 30;
+
+    public int infectionProbability = 10;
 
     //스테이지 감염병 종류에 따른 감염 확률 매핑
     private Dictionary<int, float> probabilityMapping = new Dictionary<int, float>();
@@ -29,9 +31,12 @@ public class InfectionManager
         allClearButton = Assign(allClearButton, "AllClearButton");
 
         allClearButton.onClick.AddListener(() => { DisinfectAllViruses(); BtnSoundManager.Instance.PlayButtonSound(); });
+<<<<<<< HEAD
 
         // AudioManager 참조 가져오기
         audioManager = GameObject.FindObjectOfType<AudioManager>();
+=======
+>>>>>>> upstream/main
     }
     public void UpdateInfectionProbability()
     {
@@ -69,7 +74,12 @@ public class InfectionManager
 
         foreach (var ward in wards)
         {
-            totalInfected += ward.infectedNPC;
+            totalInfected += ward.doctors.Count(d => d.infectionController.isInfected)
+                + ward.nurses.Count(n => n.infectionController.isInfected)
+                + ward.outpatients.Count(o => o.infectionController.isInfected)
+                + ward.inpatients.Count(i => i.infectionController.isInfected)
+                + ward.emergencyPatients.Count(e => e.infectionController.isInfected)
+                + ward.icuPatients.Count(c => c.infectionController.isInfected);
             totalNPCs += ward.totalOfNPC;
         }
 
@@ -77,6 +87,7 @@ public class InfectionManager
         {
             return 0f; // 병원 전체에 NPC가 없으면 감염률 0%
         }
+<<<<<<< HEAD
 
         float overallInfectionRate = (totalInfected / totalNPCs) * 100f; // 전체 감염률을 퍼센트로 계산
 
@@ -85,14 +96,21 @@ public class InfectionManager
 
 
     public Dictionary<string,float> GetInfectionRateByRole()
+=======
+        //Debug.Log($"감염률 계산 : {totalInfected} / {totalNPCs} = {totalInfected / totalNPCs} ");
+        return (totalInfected / totalNPCs) * 100f; // 전체 감염률을 퍼센트로 계산
+    }
+
+    public Dictionary<string, float> GetInfectionRateByRole()
+>>>>>>> upstream/main
     {
         Dictionary<string, float> infectionRateByRoleDictionary = new Dictionary<string, float>();
-        float[] numberOfInfectedNPC = new float[5];
-        float[] numberOfNPC = new float[5];
+        float[] numberOfInfectedNPC = new float[6];
+        float[] numberOfNPC = new float[6];
 
         foreach (Ward ward in Ward.wards)
         {
-            foreach(PatientController patient in ward.inpatients)
+            foreach (PatientController patient in ward.inpatients)
             {
                 if (patient.personComponent.status != InfectionState.Normal)
                 {
@@ -118,30 +136,43 @@ public class InfectionManager
                 numberOfNPC[2]++;
 
             }
-
-            foreach(NurseController nurse in ward.nurses)
+            foreach (PatientController patient in ward.icuPatients)
             {
-                if (nurse.personComponent.status != InfectionState.Normal)
+                if (patient.personComponent.status != InfectionState.Normal)
                 {
                     numberOfInfectedNPC[3]++;
                 }
                 numberOfNPC[3]++;
+
             }
 
-            foreach(DoctorController doctor in ward.doctors)
+            foreach (NurseController nurse in ward.nurses)
             {
-                if (doctor.personComponent.status != InfectionState.Normal)
+                if (nurse.personComponent.status != InfectionState.Normal)
                 {
                     numberOfInfectedNPC[4]++;
                 }
                 numberOfNPC[4]++;
             }
+
+            foreach (DoctorController doctor in ward.doctors)
+            {
+                if (doctor.personComponent.status != InfectionState.Normal)
+                {
+                    numberOfInfectedNPC[5]++;
+                }
+                numberOfNPC[5]++;
+            }
         }
-        infectionRateByRoleDictionary.Add("inpatients", numberOfInfectedNPC[0] / numberOfNPC[0]);
-        infectionRateByRoleDictionary.Add("outpatients", numberOfInfectedNPC[1] / numberOfNPC[1]);
-        infectionRateByRoleDictionary.Add("emergencyPatients", numberOfInfectedNPC[2] / numberOfNPC[2]);
-        infectionRateByRoleDictionary.Add("nurse", numberOfInfectedNPC[3] / numberOfNPC[3]);
-        infectionRateByRoleDictionary.Add("doctor", numberOfInfectedNPC[4] / numberOfNPC[4]);
+        // 역할 이름 배열
+        string[] roles = { "inpatients", "outpatients", "emergencyPatients", "icuPatients", "nurse", "doctor" };
+
+        // 반복문을 사용해 사전 업데이트
+        for (int i = 0; i < roles.Length; i++)
+        {
+            float infectionRate = (numberOfNPC[i] != 0) ? (float)numberOfInfectedNPC[i] / numberOfNPC[i] : 0f;
+            infectionRateByRoleDictionary[roles[i]] = infectionRate;
+        }
 
         return infectionRateByRoleDictionary;
     }

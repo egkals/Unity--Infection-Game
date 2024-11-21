@@ -2,20 +2,15 @@
 
 public class Virus : MonoBehaviour
 {    
-    public float infectionProbability = 0.5f;  //감염 확률(50%)
+    public float infectionProbability = 0.1f;  //감염 확률(50%)
 
     private float lifetime = 5;              //바이러스 기본 수명 5초
     private InfectionState infectionState;   //감염 상태
-    private OneClearManager oneClearManager;
 
     public static float virusLifetime = 5f;                    //바이러스 수명
-    public static float virusDropProbability = 0.01f;          //바이러스가 생성될 확률
-    public static float checkInterval = 0.1f;                  //감염 체크 간격
+    public static float virusDropProbability = 0.05f;          //바이러스가 생성될 확률
+    public static float checkInterval = 1f;                  //감염 체크 간격
     public static int currentGameLevel_1 = 1;
-    void Start()
-    {
-        oneClearManager = FindObjectOfType<OneClearManager>();
-    }
 
     // 바이러스의 수명 관리
     public void SetLifetime(float time)
@@ -49,23 +44,6 @@ public class Virus : MonoBehaviour
     public void Disinfect()
     {
         Destroy(gameObject);
-        Debug.Log("바이러스 하나를 소독했습니다.");  
-    }
-
-    //클릭 이벤트 처리 메서드
-    void OnMouseDown()
-    {
-        if(oneClearManager != null && oneClearManager.IsDisinfectionOn())
-        {
-            Virus clickedVirus = GetComponent<Virus>();
-            if (clickedVirus != null)
-            {
-                clickedVirus.Disinfect();
-            }
-        }
-        else
-        {
-            Debug.Log("소독이 비활성화되어 바이러스가 삭제되지 않았습니다.");
-        }
+        //Debug.Log("바이러스 하나를 소독했습니다.");  
     }
 }

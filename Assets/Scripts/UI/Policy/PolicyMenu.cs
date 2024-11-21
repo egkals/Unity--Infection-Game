@@ -44,16 +44,26 @@ public class PolicyMenu : MonoBehaviour
         researchTab = Assign(researchTab, "ResearchTab");
 
         // 버튼 클릭 시 패널 활성화 설정
+<<<<<<< HEAD
         policyOpenButton.onClick.AddListener(() => {
             OpenPolicyPanel();
             BtnSoundManager.Instance.PlayButtonSound();
         });
 
+=======
+        policyOpenButton.onClick.AddListener(() =>
+        {
+            OpenPolicyPanel();
+            BtnSoundManager.Instance.PlayButtonSound();
+            OneClearManager.Instance.CloseDisinfectionMode();
+        });
+>>>>>>> upstream/main
         // 이미지(닫기 버튼) 클릭 이벤트 설정
         AddEventTrigger(policyCloseButton.gameObject, EventTriggerType.PointerClick, (data) => {
             ClosePolicyPanel(data);
             BtnSoundManager.Instance.PlayButtonSound();
         });
+<<<<<<< HEAD
 
         // 각 연구 버튼 클릭 시 연구 변경
         AddEventTrigger(gearTabButton.gameObject, EventTriggerType.PointerClick, (data) => {
@@ -68,6 +78,12 @@ public class PolicyMenu : MonoBehaviour
             ChangePolicy("Research", researchTabButton);
             BtnSoundManager.Instance.PlayButtonSound();
         });
+=======
+        // 각 연구 버튼 클릭 시 연구 변경
+        AddEventTrigger(gearTabButton.gameObject, EventTriggerType.PointerClick, (data) => { ChangePolicy("Gear", gearTabButton); BtnSoundManager.Instance.PlayButtonSound(); });
+        AddEventTrigger(patientTabButton.gameObject, EventTriggerType.PointerClick, (data) => { ChangePolicy("Patient", patientTabButton); BtnSoundManager.Instance.PlayButtonSound(); });
+        AddEventTrigger(researchTabButton.gameObject, EventTriggerType.PointerClick, (data) => { ChangePolicy("Research", researchTabButton); BtnSoundManager.Instance.PlayButtonSound(); });
+>>>>>>> upstream/main
 
         // 각 버튼에 마우스 오버 및 클릭 효과 추가
         AddHoverEffect(gearTabButton);

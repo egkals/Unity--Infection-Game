@@ -5,11 +5,27 @@ using UnityEngine.UI;
 
 public class OneClearManager : MonoBehaviour
 {
+    public static OneClearManager Instance { get; private set; }
+
     public Button oneClearButton;
     public GameObject guidGreenImage;            //소독중 표지판
     public Texture2D customCursor;                  //소독 커서 이미지
-    private bool isDisinfectionOn = false;       //소독 중인지 여부
-    private bool isCustomCursorActive = false;   //현재 커서 상태 추적
+    public bool isDisinfectionOn = false;       //소독 중인지 여부
+    private LayerMask mainCameraCullingMask;     // Main 카메라의 CullingMask
+
+    void Awake()
+    {
+        // 싱글톤 초기화
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject); // 씬 전환 시에도 유지하고 싶다면 사용
+        }
+        else
+        {
+            Destroy(gameObject); // 이미 Instance가 있다면 새로운 객체는 제거
+        }
+    }
 
     void Start()
     {
@@ -24,13 +40,20 @@ public class OneClearManager : MonoBehaviour
         }
 
         guidGreenImage.SetActive(false);
+<<<<<<< HEAD
         oneClearButton.onClick.AddListener (() => { ToggleDisinfection(); BtnSoundManager.Instance.PlayButtonSound(); });  //버튼 상태 전환
+=======
+        oneClearButton.onClick.AddListener(() => { ToggleDisinfection(); BtnSoundManager.Instance.PlayButtonSound(); });  //버튼 상태 전환
+
+        // Main 카메라의 CullingMask 설정
+        mainCameraCullingMask = Camera.main.cullingMask;
+>>>>>>> upstream/main
     }
 
-    void ToggleDisinfection()
+    public void ToggleDisinfection()
     {
         isDisinfectionOn = !isDisinfectionOn;
-        Debug.Log("Disinfection 상태: " + (isDisinfectionOn ? "On" : "Off"));  //수정
+        //Debug.Log("Disinfection 상태: " + (isDisinfectionOn ? "On" : "Off"));  //수정
         if (isDisinfectionOn)
         {
             guidGreenImage.SetActive(true);
@@ -40,23 +63,48 @@ public class OneClearManager : MonoBehaviour
             Vector2 hotspot = new Vector2(customCursor.width/2, customCursor.height/2); // 커서 중심을 이미지 크기와 동일하게
             //Cursor.SetCursor(customCursor, hotspot, CursorMode.Auto);
             Cursor.SetCursor(customCursor, hotspot, CursorMode.ForceSoftware);
-            isCustomCursorActive = true;
         }
         else
         {
-            guidGreenImage.SetActive(false);
-
-            //소독 모드 OFF -> 원래 커서로 복원
-            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
-            isCustomCursorActive = false;
+            CloseDisinfectionMode();
         }
     }
 
-    // 소독 기능 활성화 상태 확인
-    // Virus 스크립트 -> ture면 마우스 클릭으로 하나씩 소독 시작
-    public bool IsDisinfectionOn()
+    public void CloseDisinfectionMode()
     {
-        return isDisinfectionOn;
+        guidGreenImage.SetActive(false);
+
+        //소독 모드 OFF -> 원래 커서로 복원
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+        isDisinfectionOn = false;
+    }
+
+    void Update()
+    {
+        if (isDisinfectionOn && Input.GetMouseButtonDown(0))
+        {
+            HandleDisinfection();
+        }
+    }
+
+    void HandleDisinfection()
+    {
+        if (!isDisinfectionOn) return;
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); // 마우스 포인터의 화면 좌표를 기준으로 Ray 생성
+        RaycastHit[] hits = Physics.RaycastAll(ray, 100f, mainCameraCullingMask); // Raycast로 모든 충돌 검사
+
+        foreach (RaycastHit hit in hits)
+        {
+            Virus virus = hit.collider.GetComponentInParent<Virus>(); // Raycast로 hit한 오브젝트나 부모에서 Virus 컴포넌트 찾기
+
+            if (virus != null)
+            {
+                virus.Disinfect(); // 소독 실행
+                //Debug.Log("바이러스 소독됨: " + virus.gameObject.name);
+                break; // 첫 번째 바이러스를 소독한 후 종료
+            }
+        }
     }
 
     // 자동 할당 코드 

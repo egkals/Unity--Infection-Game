@@ -45,6 +45,7 @@ public class MonthlyReportUI : MonoBehaviour
             entry.callback.AddListener((eventData) => { CloseMonthlyReport(); });
             BtnSoundManager.Instance.PlayButtonSound();
             trigger.triggers.Add(entry);
+            BtnSoundManager.Instance.PlayButtonSound();
         }
     }
 

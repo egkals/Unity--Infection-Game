@@ -54,13 +54,13 @@ public class Splash : MonoBehaviour
     private IEnumerator SplashSequence()
     {
         // 초기 대기 시간
-        yield return new WaitForSeconds(initialDelay);
+        yield return YieldInstructionCache.WaitForSeconds(initialDelay);
 
         // 스플래시 텍스트 페이드 인
         yield return StartCoroutine(FadeText(splashText, 0f, 1f, fadeDuration));
 
         // 사용자가 클릭할 때까지 대기
-        yield return new WaitUntil(() => Input.GetMouseButtonDown(0));
+        yield return YieldInstructionCache.WaitForSeconds(1f);
 
         startGameOverlay.SetActive(false);
 

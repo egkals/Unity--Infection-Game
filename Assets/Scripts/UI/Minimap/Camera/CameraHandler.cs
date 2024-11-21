@@ -5,6 +5,7 @@ using UnityEngine;
 public class CameraHandler : MonoBehaviour
 {
     public bool isPolicyMenuOpen = false; // 정책 창이 열려 있는지 여부
+    public bool isTutoralMoveActive = false;    // 무브 튜토리얼 중에는 뷰 전환 막기 여부
 
     public enum ViewMode { TopView, QuarterView }
     public ViewMode currentViewMode = ViewMode.TopView;
@@ -51,9 +52,11 @@ public class CameraHandler : MonoBehaviour
             HandleEdgeMovement();
         }
 
-        if (Input.GetKeyDown(KeyCode.T))
+        // 튜토리얼 중일 때는 T 키 입력을 막음
+        if (!isTutoralMoveActive && Input.GetKeyDown(KeyCode.T))
         {
             cameraController.ToggleViewMode();
+            SetViewMode();
         }
         ApplyMovement();
         HandleMouseZoom();
@@ -209,9 +212,18 @@ public class CameraHandler : MonoBehaviour
         return new Vector2(cos * tx - sin * ty, sin * tx + cos * ty);
     }
 
-    public void SetViewMode(ViewMode mode)
+    public void SetViewMode()
     {
-        currentViewMode = mode;
+        if (currentViewMode == ViewMode.TopView)
+        {
+            currentViewMode = ViewMode.QuarterView;
+            Debug.Log("Switched to Quarter View");
+        }
+        else if (currentViewMode == ViewMode.QuarterView)
+        {
+            currentViewMode = ViewMode.TopView;
+            Debug.Log("Switched to Top View");
+        }
     }
 
     public void SetCenterPosition(Vector3 newCenterPosition)

@@ -2,10 +2,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Text.RegularExpressions;
-using MyApp.DataAccess;
 using System;
 using System.Collections;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine.Networking;
 
 namespace MyApp.UserManagement
@@ -17,9 +15,15 @@ namespace MyApp.UserManagement
         public string userName;
         public string userPassword;
         public int tutorial;
+<<<<<<< HEAD
         public int easyCompleted;
         public int normalCompleted;
         public int hardCompleted;
+=======
+        public string easyCompleted;
+        public string normalCompleted;
+        public string hardCompleted;
+>>>>>>> upstream/main
     }
 
     public class UserManager : MonoBehaviour
@@ -29,6 +33,7 @@ namespace MyApp.UserManagement
         private string urlGetLogin = "http://220.69.209.164:3333/get_login"; // Flask 서버 IP
 
         private List<User> users;
+        private List<string> steps = new List<string> { "", "", "" };
 
         private void Awake()
         {
@@ -85,18 +90,33 @@ namespace MyApp.UserManagement
         }
 
         // 사용자 클리어 단계 가져오기
+<<<<<<< HEAD
         public string GetUserStep(string id)
+=======
+        public List<string> GetUserStep(string id)
+>>>>>>> upstream/main
         {
             foreach (var user in users)
             {
                 if (user.userId.ToString() == id)
                 {
+<<<<<<< HEAD
                     string userstep = $"{user.easyCompleted}{user.normalCompleted}{user.hardCompleted}";  //전부 클리어한 경우: 111
                     Debug.Log($"로그인:{userstep}");
                     return userstep;
                 }
             }
             return "0";
+=======
+                    steps[0] = user.easyCompleted;
+                    steps[1] = user.normalCompleted;
+                    steps[2] = user.hardCompleted;
+
+                    return steps;
+                }
+            }
+            return null;
+>>>>>>> upstream/main
         }
 
         // 로그인 정보 확인 (둘다 일치 시 true)
@@ -180,7 +200,11 @@ namespace MyApp.UserManagement
 
         // 회원가입을 통해 로그인DB에 회원 정보 추가
         // 튜토리얼 진행 여부 업데이트
+<<<<<<< HEAD
         public void AddUser(string id, string username, string password, int istutorial, int eazyMode, int normalMode, int hardMode)
+=======
+        public void AddUser(string id, string username, string password, int istutorial, string eazyMode, string normalMode, string hardMode)
+>>>>>>> upstream/main
         {
             WWWForm form = new WWWForm();
             form.AddField("userId", id);
@@ -193,7 +217,7 @@ namespace MyApp.UserManagement
 
             Debug.Log($"DB: Sending Data: nurse_id={id}, nurse_name={username}, nurse_passwd={password}");
 
-            string urlSignupData = "http://220.69.209.164:3333/signup_or_update_tutorial";
+            string urlSignupData = "http://220.69.209.164:3333/signup_or_update";
 
             StartCoroutine(PostRequest(urlSignupData, form));
         }

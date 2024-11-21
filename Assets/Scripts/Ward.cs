@@ -18,9 +18,15 @@ public class Ward : MonoBehaviour
     public float totalOfNPC = 0;
     public float infectedNPC = 0;
     public bool isClosed = false;
-    public bool isInClosePeriod = false;
 
     public bool isWaiting = false;
+
+    public int doctorCount = 0;
+    public int nurseCount = 0;
+    public int outpatientCount = 0;
+    public int inpatientCount = 0;
+    public int emergencypatientCount = 0;
+    public int icupatientCount = 0;
 
     // Start is called before the first frame update
     void Awake()
@@ -86,99 +92,169 @@ public class Ward : MonoBehaviour
         {
             beds = waypointsTransform.GetComponentsInChildren<BedWaypoint>().ToList();
         }
-        StartCoroutine(WaitOneSecond());
     }
 
     // Update is called once per frame
     void Update()
     {
-        totalOfNPC = doctors.Count + inpatients.Count + nurses.Count + outpatients.Count;
-        if (isInClosePeriod || isWaiting)
-        {
-            return;
-        }
-
-        //병동 폐쇄
-        //if ((infectedNPC / totalOfNPC >= 0.5) || doctors.Count == 0)
-        //{
-        //    isClosed = true;
-        //}
+        totalOfNPC = doctors.Count + inpatients.Count + nurses.Count + outpatients.Count + emergencyPatients.Count + icuPatients.Count;
     }
 
+    public void RemoveFromPatientList(PatientController patient)
+    {
+        if (patient.personComponent.role == Role.Outpatient && patient.wardComponent.outpatients.Contains(patient))
+        {
+            patient.wardComponent.outpatients.Remove(patient);
+        }
+        else if (patient.personComponent.role == Role.Inpatient && patient.wardComponent.inpatients.Contains(patient))
+        {
+            patient.wardComponent.inpatients.Remove(patient);
+        }
+        else if (patient.personComponent.role == Role.EmergencyPatient && patient.wardComponent.emergencyPatients.Contains(patient))
+        {
+            patient.wardComponent.emergencyPatients.Remove(patient);
+        }
+        else if (patient.personComponent.role == Role.ICUPatient && patient.wardComponent.icuPatients.Contains(patient))
+        {
+            patient.wardComponent.icuPatients.Remove(patient);
+        }
+    }
     public void CloseWard()
     {
-        isInClosePeriod = true;
-        foreach (PatientController patient in outpatients)
-        {
-            if (patient != null)
-            {
-                int index = wards.IndexOf(this);
-                if (patient.waypointIndex == 3 || patient.waypointIndex == 4)
-                {
-                    continue;
-                }
-                if ((index == 0 || index == 2) && !wards[index + 1].isClosed)
-                {
-                    patient.ward = index + 1;
-                    patient.waypointsTransform = Managers.NPCManager.waypointDictionary[(index + 1, "OutpatientWaypoints")];
-                    patient.wardComponent = wards[index + 1];
-                    patient.wardComponent.outpatients.Add(patient);
-                    patient.waypoints.Clear();
-                    patient.isWaitingForDoctor = false;
-                    patient.waypointIndex = 0;
-                }
-                else if ((index == 1 || index == 3) && !wards[index - 1].isClosed)
-                {
-                    patient.ward = index - 1;
-                    patient.waypointsTransform = Managers.NPCManager.waypointDictionary[(index - 1, "OutpatientWaypoints")];
-                    patient.wardComponent = wards[index - 1];
-                    patient.wardComponent.outpatients.Add(patient);
-                    patient.waypoints.Clear();
-                    patient.isWaitingForDoctor = false;
-                    patient.waypointIndex = 0;
-                }
-                else
-                {
-                    patient.StartCoroutine(patient.ExitHospital());
-                }
+        isClosed = true;
 
+        MoveOutpatients(num);
+        MoveInpatientsToAvailableBeds();
+        ClearEmergencyPatients();
+        DeactivateNurses();
+        DeactivateDoctors();
+    }
+
+    private void MoveOutpatients(int index)
+    {
+        for (int i = outpatients.Count - 1; i >= 0; i--)
+        {
+            PatientController patient = outpatients[i];
+            if (patient == null) continue;
+            if (patient.waypointIndex == 4)
+            {
+                continue;
+            }
+            patient.StopAllCoroutines();
+            patient.agent.ResetPath();
+            patient.agent.isStopped = false;
+            bool moved = TryMovePatientToAdjacentWard(patient, index);
+            if (!moved)
+            {
+                patient.StartCoroutine(patient.ExitHospital());
             }
         }
         outpatients.Clear();
+    }
 
-        foreach(PatientController inpatient in inpatients)
+    private void MoveInpatientsToAvailableBeds()
+    {
+        for (int i = inpatients.Count - 1; i >= 0; i--)
         {
-            if (inpatient != null)
+            PatientController inpatient = inpatients[i];
+            if (inpatient == null || inpatient.isExiting) continue;
+
+            BedWaypoint nextBed = wards
+                .Where(ward => ward.num >= 4 && ward.num <= 7 && !ward.isClosed)
+                .SelectMany(ward => ward.beds)
+                .FirstOrDefault(bed => bed.patient == null);
+
+            if (nextBed != null)
             {
-                inpatient.StopCoroutine(inpatient.InpatientMove());
-                inpatient.StopCoroutine(inpatient.HospitalizationTimeCounter());
+                nextBed.patient = inpatient.gameObject;
+                if(inpatient.prevCoroutine != null)
+                {
+                    inpatient.StopCoroutine(inpatient.prevCoroutine);
+                }
+                inpatient.prevCoroutine = inpatient.StartCoroutine(inpatient.TransferToAvailableWard(nextBed));
+            }
+            else
+            {
+                inpatient.StopAllCoroutines();
+                inpatient.agent.isStopped = false;
                 inpatient.StartCoroutine(inpatient.ExitHospital());
             }
         }
+        inpatients.Clear();
+    }
 
-        foreach (NurseController nurse in nurses)
+    private void ClearEmergencyPatients()
+    {
+        for (int i = emergencyPatients.Count - 1; i >= 0; i--)
         {
-            if (nurse != null)
+            PatientController patient = emergencyPatients[i];
+            if (patient != null)
             {
-                Managers.ObjectPooling.DeactivateNurse(nurse.gameObject);
+                patient.StartCoroutine(patient.ExitHospital());
+            }
+        }
+        emergencyPatients.Clear();
+    }
+
+    private void DeactivateNurses()
+    {
+        for (int i = nurses.Count - 1; i >= 0; i--)
+        {
+            if (nurses[i] != null)
+            {
+                Managers.ObjectPooling.DeactivateNurse(nurses[i].gameObject);
             }
         }
         nurses.Clear();
+    }
 
-        foreach (DoctorController doctor in doctors)
+    private void DeactivateDoctors()
+    {
+        for (int i = doctors.Count - 1; i >= 0; i--)
         {
-            if (doctor != null)
+            if (doctors[i] != null)
             {
-                Managers.ObjectPooling.DeactivateDoctor(doctor.gameObject);
+                if (doctors[i].waypoints[0] is DoctorOffice doctorOffice)
+                {
+                    doctorOffice.waitingQueue.Clear();
+                }
+                Managers.ObjectPooling.DeactivateDoctor(doctors[i].gameObject);
             }
         }
         doctors.Clear();
-
     }
+
+    private bool TryMovePatientToAdjacentWard(PatientController patient, int index)
+    {
+        int targetIndex = -1;
+        if ((index == 0 || index == 2) && !wards[index + 1].isClosed)
+        {
+            targetIndex = index + 1;
+        }
+        else if ((index == 1 || index == 3) && !wards[index - 1].isClosed)
+        {
+            targetIndex = index - 1;
+        }
+
+        if (targetIndex != -1)
+        {
+            patient.ward = targetIndex;
+            patient.waypointsTransform = Managers.NPCManager.waypointDictionary[(targetIndex, "OutpatientWaypoints")];
+            patient.wardComponent.outpatients.Remove(patient);
+            patient.wardComponent = wards[targetIndex];
+            patient.wardComponent.outpatients.Add(patient);
+            patient.waypoints.Clear();
+            patient.isWaitingForDoctor = false;
+            patient.waypointIndex = 0;
+            patient.isWaiting = false;
+            return true;
+        }
+        return false;
+    }
+
     public void OpenWard()
     {
         isClosed = false;
-        isInClosePeriod = false;
         if (0 <= num && num <= 3)
         {
             for (int i = num * 16; i < (num * 16) + 16; i++)
@@ -186,7 +262,7 @@ public class Ward : MonoBehaviour
                 GameObject nurse = GameObject.Find($"WardNurse {i}");
                 Managers.ObjectPooling.ActivateNurse(nurse);
             }
-            for (int i = num * 6; i< (num * 6)+6;i++)
+            for (int i = num * 6; i < (num * 6) + 6; i++)
             {
                 GameObject doctor = GameObject.Find($"WardDoctor {i}");
                 Managers.ObjectPooling.ActivateDoctor(doctor);
@@ -194,15 +270,15 @@ public class Ward : MonoBehaviour
         }
         else if (4 <= num && num <= 7)
         {
-            for (int i = num * 12; i < (num * 12) + 12; i++)
+            for (int i = (num-4) * 12; i < ((num-4) * 12) + 12; i++)
             {
                 GameObject nurse = GameObject.Find($"InpatientWardNurse {i}");
                 Managers.ObjectPooling.ActivateNurse(nurse);
             }
         }
-        else if(num == 8)
+        else if (num == 8)
         {
-            for(int i = 0;i<10;i++)
+            for (int i = 0; i < 10; i++)
             {
                 GameObject nurse = GameObject.Find($"ERNurse {i}");
                 Managers.ObjectPooling.ActivateNurse(nurse);
@@ -210,22 +286,5 @@ public class Ward : MonoBehaviour
             GameObject doctor = GameObject.Find($"ERDoctor 0");
             Managers.ObjectPooling.ActivateDoctor(doctor);
         }
-    }
-
-    private IEnumerator WaitOneSecond()
-    {
-        isWaiting = true;
-        yield return new WaitForSeconds(1.0f);
-        isWaiting = false;
-    }
-
-    // 의사, 간호사, 외래환자의 수를 반환하는 메서드 추가
-    public (int doctorCount, int nurseCount, int outpatientCount) GetCounts()
-    {
-        int doctorCount = doctors.Count;
-        int nurseCount = nurses.Count;
-        int outpatientCount = outpatients.Count;
-
-        return (doctorCount, nurseCount, outpatientCount);
     }
 }

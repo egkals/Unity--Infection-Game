@@ -13,6 +13,8 @@ public class NewsController : MonoBehaviour
     private Dictionary<int, bool> wardNurseStressNewsTriggered = new Dictionary<int, bool>();
     private Dictionary<int, bool> wardClosedNewsTriggered = new Dictionary<int, bool>();
 
+    private Dictionary<int, HashSet<int>> wardInfectionLevelsTriggered = new Dictionary<int, HashSet<int>>(); // 감염률 뉴스 단계 트리거
+
     public NewsTicker moveTextController;
 
     private bool virusOutbreakNewsTriggered = false;    // 감염병 발생 뉴스
@@ -29,7 +31,6 @@ public class NewsController : MonoBehaviour
     private void Start()
     {
         InvokeRepeating(nameof(CheckNewsRequirements), 1f, 1f);
-
     }
 
     private void InitializeNewsTriggers()
@@ -40,6 +41,7 @@ public class NewsController : MonoBehaviour
             wardDoctorStressNewsTriggered[ward.num] = false;
             wardNurseStressNewsTriggered[ward.num] = false;
             wardClosedNewsTriggered[ward.num] = false;
+            wardInfectionLevelsTriggered[ward.num] = new HashSet<int>();
         }
     }
 
@@ -58,7 +60,7 @@ public class NewsController : MonoBehaviour
         List<Ward> allWards = Ward.wards;
 
         CheckFirstInfectionNews(allWards);
-        CheckInfectionNews(allWards, GetInfectionThreshold());
+        CheckInfectionNews(allWards);
         CheckWardClosedNews(allWards);
     }
 
@@ -71,15 +73,21 @@ public class NewsController : MonoBehaviour
         }
     }
 
-    private void CheckInfectionNews(List<Ward> wards, float threshold)
+    private void CheckInfectionNews(List<Ward> wards)
     {
         foreach (Ward ward in wards)
         {
             int infectionRate = Mathf.RoundToInt(InfectionManager.Instance.GetInfectionRate(ward));
 
+<<<<<<< HEAD
             UpdateNewsTrigger(ward.num, wardInfectionNewsTriggered, infectionRate >= threshold,
                 $"<color=#FF0000>경고!!</color> {ward.WardName} 내 감염률이 <color=#FF0000>{threshold}%</color>에 도달했습니다!"
             );
+=======
+            CheckAndTriggerInfectionLevelNews(ward.num, infectionRate, 20, "경고!! {ward.WardName} 내 감염률이 20%에 도달했습니다!");
+            CheckAndTriggerInfectionLevelNews(ward.num, infectionRate, 50, "경고!! {ward.WardName} 내 감염률이 50%에 도달했습니다!");
+            CheckAndTriggerInfectionLevelNews(ward.num, infectionRate, 80, "경고!! {ward.WardName} 내 감염률이 80%에 도달했습니다!");
+>>>>>>> upstream/main
         }
     }
 
@@ -88,8 +96,16 @@ public class NewsController : MonoBehaviour
         foreach (Ward ward in wards)
         {
             UpdateNewsTrigger(ward.num, wardClosedNewsTriggered, ward.isClosed,
-                $"<color=#FF0000>경고!!</color> {ward.WardName} 병동의 감염률이 <color=#FF0000>50%</color>를 초과하였습니다!"
-            );
+                $"<color=#FF0000>경고!!</color> {ward.WardName} 병동의 감염률이 <color=#FF0000>50%</color>를 초과하였습니다!");
+        }
+    }
+
+    private void CheckAndTriggerInfectionLevelNews(int wardNum, int infectionRate, int threshold, string newsMessage)
+    {
+        if (!wardInfectionLevelsTriggered[wardNum].Contains(threshold) && infectionRate >= threshold)
+        {
+            EnqueueNews(newsMessage.Replace("{ward.WardName}", Ward.wards.Find(w => w.num == wardNum).WardName));
+            wardInfectionLevelsTriggered[wardNum].Add(threshold);
         }
     }
 

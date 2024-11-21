@@ -24,6 +24,7 @@ public class Person : MonoBehaviour
 {
     public InfectionState status = InfectionState.Normal;
     public int infectionResistance = 0;
+    public int vaccineResist = 0;
     public Role role;
 
     public bool isImmune;
@@ -179,13 +180,6 @@ public class Person : MonoBehaviour
         }
     }
 
-    public void ResetPerson()
-    {
-        role = Role.Outpatient;
-        status = InfectionState.Normal;
-        // 필요한 다른 속성들도 초기화
-    }
-
 
     public void ChangeStatus(InfectionState infection)
     {
@@ -201,29 +195,38 @@ public class Person : MonoBehaviour
 
     public IEnumerator SelfRecovery()
     {
-        yield return new WaitForSeconds(Random.Range(7, 15));
+        yield return YieldInstructionCache.WaitForSeconds(Random.Range(7, 15));
         //Debug.Log("자가 면역을 가져서 더 이상 감염되지 않음");
         NPCManager.Instance.UnhighlightNPC(gameObject);
         //Debug.Log("감염자 색상 풀림" + gameObject.name);
         status = InfectionState.Normal;
+        gameObject.GetComponent<NPCController>().wardComponent.infectedNPC--;
         isImmune = true;
     }
     public void Recover()
     {
+        NPCManager.Instance.UnhighlightNPC(gameObject);
         status = InfectionState.Normal;
+        isImmune = true;
+        StartCoroutine(SetImmune());
+    }
+    private IEnumerator SetImmune()
+    {
+        yield return new WaitForSeconds(5);
+        isImmune = false;
     }
     private IEnumerator IncubationPeriod(InfectionState infection)
     {
         status = infection;
         isWaiting = true;
-        yield return new WaitForSeconds(5);
+        yield return YieldInstructionCache.WaitForSeconds(5);
         isWaiting = false;
         OnInfectionStateChanged?.Invoke(infection); // 이벤트 호출
     }
 
-    public float GetTotalProtectionRate()
+    public int GetTotalProtectionRate()
     {
-        float totalProtectionRate = 0f;
+        int totalProtectionRate = 0;
         foreach (var item in Inventory.Values)
         {
             if (item.isEquipped)
@@ -232,5 +235,11 @@ public class Person : MonoBehaviour
             }
         }
         return totalProtectionRate;
+    }
+
+    // 아이템 방어율 업데이트
+    public void UpdateInfectionResistance()
+    {
+        infectionResistance = vaccineResist + GetTotalProtectionRate(); // 아이템 방어율 합산
     }
 }

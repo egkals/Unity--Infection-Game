@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 
 public class PatientCreator
@@ -59,7 +58,7 @@ public class PatientCreator
             newInpatient.name = "Inpatient " + i;
 
             // 입원 환자 위치별 Layer 설정
-
+            
 
             if (ward >= 0 && ward < Managers.LayerChanger.layers.Length)
             {
@@ -103,7 +102,7 @@ public class PatientCreator
             newICUPatientController.bedWaypoint.isEmpty = false;
             Transform waypointTransform = newICUPatientController.bedWaypoint.transform.parent;
             newICUPatientController.wardComponent = waypointTransform.parent.GetComponent<Ward>();
-            newICUPatientController.wardComponent.inpatients.Add(newICUPatientController);
+            newICUPatientController.wardComponent.icuPatients.Add(newICUPatientController);
             profileWindow.AddICUPateintProfile(newICUPatient);
             numberOfICUPatient++;
         }
@@ -112,20 +111,9 @@ public class PatientCreator
     {
         outpatientWaiting = true; // 대기 상태로 설정
         yield return new WaitUntil(() => startSignal);
-        bool isClosed = false;
-        for (int i = 0; i < 6; i++)
+        if (AreAllWardsClosed())
         {
-            if (!Managers.NPCManager.waypointDictionary[(i, "OutpatientWaypoints")].gameObject.GetComponentInParent<Ward>().isClosed)
-            {
-                break;
-            }
-            else
-            {
-                isClosed = true;
-            }
-        }
-        if (isClosed)
-        {
+            outpatientWaiting = false;
             yield break;
         }
         Vector3 spawnPosition = spawnAreas[Random.Range(0, 2)].GetRandomPointInRange(); // 랜덤 생성 위치 설정
@@ -164,14 +152,15 @@ public class PatientCreator
             Debug.LogError("새 외래 환자를 활성화하는 데 실패했습니다.");
         }
 
-        yield return new WaitForSeconds(spawnDelay); // 대기 시간
+        yield return YieldInstructionCache.WaitForSeconds(spawnDelay); // 대기 시간
         outpatientWaiting = false; // 대기 상태 해제
     }
+    
     public IEnumerator SpawnEmergencyPatient()
     {
         emergencyPatientWaiting = true;
         yield return new WaitUntil(() => startSignal);
-        yield return new WaitForSeconds(spawnDelay); // 대기 시간
+        yield return YieldInstructionCache.WaitForSeconds(spawnDelay); // 대기 시간
 
         BedWaypoint nextBed = null;
         foreach (BedWaypoint bed in Ward.wards[8].beds)
@@ -186,20 +175,22 @@ public class PatientCreator
 
         if (nextBed == null)
         {
+            emergencyPatientWaiting = false;
             yield break;
         }
 
         Vector3 spawnPosition = spawnAreas[2].GetRandomPointInRange(); // 랜덤 생성 위치 설정
-        GameObject newEmaergencyPatient = Managers.ObjectPooling.ActiveEmergentcyPatient(spawnPosition, nextBed); // 응급 환자 활성화
-        newEmaergencyPatient.GetComponent<Person>().role = Role.EmergencyPatient;
-        if (newEmaergencyPatient != null)
+        GameObject newEmergencyPatient = Managers.ObjectPooling.ActiveEmergentcyPatient(spawnPosition, nextBed); // 응급 환자 활성화
+        newEmergencyPatient.gameObject.layer = LayerMask.NameToLayer("Floor 1 L");
+        newEmergencyPatient.GetComponent<Person>().role = Role.EmergencyPatient;
+        if (newEmergencyPatient != null)
         {
-            Person newEmergencyPatientPerson = newEmaergencyPatient.GetComponent<Person>(); // Person 컴포넌트 가져오기
+            Person newEmergencyPatientPerson = newEmergencyPatient.GetComponent<Person>(); // Person 컴포넌트 가져오기
             Renderer renderer = newEmergencyPatientPerson.GetComponent<Renderer>();         // Renderer 컴포넌트 가져오기
 
             if (newEmergencyPatientPerson != null)
             {
-                NPCManager.Instance.RegisterNPC(newEmaergencyPatient, newEmergencyPatientPerson, renderer);
+                NPCManager.Instance.RegisterNPC(newEmergencyPatient, newEmergencyPatientPerson, renderer);
                 // 감염 상태 설정
                 if (Random.value < infectionRate)
                 {
@@ -212,7 +203,7 @@ public class PatientCreator
                         newEmergencyPatientPerson.ChangeStatus(InfectionState.Covid);
                     }
                 }
-                numberOfEmergencyPatient++; // 외래 환자 수 증가
+                numberOfEmergencyPatient++;
             }
             else
             {
@@ -227,5 +218,18 @@ public class PatientCreator
 
         emergencyPatientWaiting = false; // 대기 상태 해제
 
+    }
+
+    private bool AreAllWardsClosed()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            var ward = Managers.NPCManager.waypointDictionary[(i, "OutpatientWaypoints")].gameObject.GetComponentInParent<Ward>();
+            if (!ward.isClosed)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }

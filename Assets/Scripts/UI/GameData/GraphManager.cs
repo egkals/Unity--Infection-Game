@@ -1,12 +1,27 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Reflection;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GraphManager : MonoBehaviour
 {
     public Transform graphContainer;    // 그래프를 그릴 부모 객체
-    public Toggle totalToggle, doctorToggle, nurseToggle, inpatientToggle, outpatientToggle, emergencyToggle;
+    public Toggle totalToggle, doctorToggle, nurseToggle, inpatientToggle, outpatientToggle, emergencyToggle, icuToggle;
+
+    public GameObject feedbackGraphPanel;
+    public Transform feedgraphContainer;    // 피드백 그래프를 그릴 부모 객체
+    public Button feedBackButton;
+    public Button backButton;
+    public Button graphCloseButton;
+    public Button feedbackCloseButton;
+
+    public Transform feedbackContainer;
+    public GameDataManager gameDataManager;
+    public TextMeshProUGUI feedbackText;
+    public float spacing = 50f;     // 프리팹 간의 간격 설정
 
     Dictionary<string, List<GameObject>> graphLines = new Dictionary<string, List<GameObject>>();
 
@@ -19,6 +34,16 @@ public class GraphManager : MonoBehaviour
         inpatientToggle = GameObject.Find("InpatientToggle").GetComponent<Toggle>();
         outpatientToggle = GameObject.Find("OutpatientToggle").GetComponent<Toggle>();
         emergencyToggle = GameObject.Find("EmergencyToggle").GetComponent<Toggle>();
+        icuToggle = GameObject.Find("IcuToggle").GetComponent<Toggle>();
+        feedbackGraphPanel = GameObject.Find("FeedbackGraphPanel");
+        feedgraphContainer = GameObject.Find("FeedgraphContainer").transform;
+        feedBackButton = GameObject.Find("FeedBackButton").GetComponent<Button>();
+        backButton = GameObject.Find("BackButton").GetComponent<Button>();
+        graphCloseButton = GameObject.Find("GraphCloseButton").GetComponent<Button>();
+        feedbackCloseButton = GameObject.Find("FeedbackCloseButton").GetComponent<Button>();
+        feedbackContainer = GameObject.Find("FeedbackContainer").transform;
+        gameDataManager = FindObjectOfType<GameDataManager>();
+        feedbackText = GameObject.Find("FeedbackText").GetComponent<TextMeshProUGUI>();
 
         // 토글별 그래프 리스트 초기화
         graphLines["total"] = new List<GameObject>();
@@ -27,6 +52,7 @@ public class GraphManager : MonoBehaviour
         graphLines["inpatients"] = new List<GameObject>();
         graphLines["outpatients"] = new List<GameObject>();
         graphLines["emergencyPatients"] = new List<GameObject>();
+        graphLines["icuPatients"] = new List<GameObject>();
 
         // 각 토글에 이벤트 리스너 추가
         totalToggle.onValueChanged.AddListener(isOn => ToggleGraphVisibility("total", isOn));
@@ -35,28 +61,39 @@ public class GraphManager : MonoBehaviour
         inpatientToggle.onValueChanged.AddListener(isOn => ToggleGraphVisibility("inpatients", isOn));
         outpatientToggle.onValueChanged.AddListener(isOn => ToggleGraphVisibility("outpatients", isOn));
         emergencyToggle.onValueChanged.AddListener(isOn => ToggleGraphVisibility("emergencyPatients", isOn));
+        icuToggle.onValueChanged.AddListener(isOn => ToggleGraphVisibility("icuPatients", isOn));
+
+        feedbackGraphPanel.SetActive(false);
+
+        feedBackButton.onClick.AddListener(OpenFeedback);
+        backButton.onClick.AddListener(CloseFeedback);
+        graphCloseButton.onClick.AddListener(QuitGame);
+        feedbackCloseButton.onClick.AddListener(QuitGame);
     }
 
-    public void DrawGraph(List<float> scores, string role)
+    public void DrawGraph(List<float> scores, string role, Transform container)
     {
-        RectTransform graphRectTransform = graphContainer.GetComponent<RectTransform>();
+        RectTransform graphRectTransform = container.GetComponent<RectTransform>();
         float graphWidth = graphRectTransform.sizeDelta.x;
         float graphHeight = graphRectTransform.sizeDelta.y;
-        float yMax = 100f;                                   // y축 최댓값
+        float yMax = 80f;                                   // y축 최댓값
         float xSpacing = graphWidth / (scores.Count - 1);    // 점 간의 x 간격 계산
         Vector2 previousPointPosition = Vector2.zero;
 
-        // 점과 선 생성
+        // 선 생성
         for (int i = 0; i < scores.Count; i++)
         {
-            float xPosition = i * xSpacing;                         // x축 간격 
-            float yPosition = (scores[i] / yMax) * graphHeight;     // 점의 y 위치
-            Vector2 currentPointPosition = new Vector2(xPosition + graphWidth / 2 * (-1), yPosition + graphHeight / 2 * (-1));
+            float xPosition = i * xSpacing;
+            float yValue = float.IsNaN(scores[i]) ? 0f : scores[i];
+            float yPosition = (yValue / yMax) * graphHeight;
+            yPosition = Mathf.Min(yPosition, graphHeight);  // y 값 최대 80으로 제한
+
+            Vector2 currentPointPosition = new Vector2(xPosition + graphWidth / 2 * (-1), yPosition - graphHeight / 2);
 
             // 이전 점과 현재 점 사이에 선 그리기
             if (i > 0)
             {
-                var line = CreateLine(previousPointPosition, currentPointPosition, role);
+                var line = CreateLine(previousPointPosition, currentPointPosition, role, container);
                 graphLines[role].Add(line);
             }
 
@@ -65,10 +102,10 @@ public class GraphManager : MonoBehaviour
     }
 
     // 선 생성하는 메소드
-    GameObject CreateLine(Vector2 start, Vector2 end, string role)
+    GameObject CreateLine(Vector2 start, Vector2 end, string role, Transform container)
     {
         GameObject linePrefab = Resources.Load<GameObject>($"Graph/{role}Line");
-        GameObject line = Instantiate(linePrefab, graphContainer);
+        GameObject line = Instantiate(linePrefab, container);
         RectTransform lineRectTransform = line.GetComponent<RectTransform>();
 
         Vector2 direction = (end - start).normalized;          // 선의 방향
@@ -91,5 +128,77 @@ public class GraphManager : MonoBehaviour
         {
             line.SetActive(isVisible);
         }
+    }
+
+    // 피드백 출력
+    void OpenFeedback()
+    {
+        feedbackGraphPanel.SetActive(true);
+
+        DrawGraph(GameDataManager.Instance.infectionRates, "total", feedgraphContainer);
+        DrawGraph(GameDataManager.Instance.doctorInfectionRates, "doctor", feedgraphContainer);
+        DrawGraph(GameDataManager.Instance.nurseInfectionRates, "nurse", feedgraphContainer);
+        DrawGraph(GameDataManager.Instance.inpatientsRates, "inpatients", feedgraphContainer);
+        DrawGraph(GameDataManager.Instance.outpatientsRates, "outpatients", feedgraphContainer);
+        DrawGraph(GameDataManager.Instance.emergencyPatientsRates, "emergencyPatients", feedgraphContainer);
+        DrawGraph(GameDataManager.Instance.icuPatientsRates, "icuPatients", feedgraphContainer);
+
+        string str = "";
+
+        for (int i = 0; i < 15; i++)
+        {
+            // 제목 설정
+            if (GameDataManager.Instance.difference20More[i])
+            {
+                str += $"{i + 1}월 - 감염률 급상승!\n";
+            }
+            else
+            {
+                str += $"{i + 1}월\n";
+            }
+
+            // 내용 설정
+            if (gameDataManager.feedbackContent.ContainsKey(i))
+            {
+                string[] lines = gameDataManager.feedbackContent[i].Split('\n');
+
+                foreach (string line in lines)
+                {
+                    if (!string.IsNullOrWhiteSpace(line)) // 빈 줄은 무시
+                    {
+                        str += $"- {line}\n";
+                    }
+                }
+            }
+            //str += $"- {gameDataManager.feedbackContent[i]}\n";
+            else
+                str += $"No research done\n";
+
+            str += "\n";
+        }
+
+        feedbackText.text = str;
+
+        //원본 백업
+        gameDataManager.originalContent = feedbackText.text;
+
+        //  레이아웃 재구성
+        feedbackContainer.gameObject.SetActive(false);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(feedbackContainer as RectTransform);
+        feedbackContainer.gameObject.SetActive(true);
+    }
+
+    void CloseFeedback()
+    {
+        feedbackGraphPanel.SetActive(false);
+    }
+
+    void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
     }
 }

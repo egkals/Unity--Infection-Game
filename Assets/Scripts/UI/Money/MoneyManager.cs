@@ -17,8 +17,8 @@ public class MoneyManager : MonoBehaviour
     public static int SurgeryFee = 20;            // 수술비
 
     // 치료제 및 백신 가격 설정
-    public static int MedicinePrice = 2;         // 치료제 가격
-    public static int VaccinePrice = 1;          // 백신 가격
+    public static int MedicinePrice = 200;         // 치료제 가격
+    public static int VaccinePrice = 100;          // 백신 가격
 
 
     private void Awake()
@@ -143,7 +143,6 @@ public class MoneyManager : MonoBehaviour
 
         // 총 일일 비용 차감
         currentMoneyManager.CurrentMoneyGetter -= totalDailyExpense;
-        Debug.Log($"일일 총 비용: {totalDailyExpense}가 차감되었습니다.");
     }
 
 

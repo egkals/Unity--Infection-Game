@@ -13,7 +13,11 @@ public class SettingButton : MonoBehaviour
 
         // 버튼 컴포넌트를 가져와 클릭 이벤트에 메서드 등록
         Button settingButtonIcon = GetComponent<Button>();
+<<<<<<< HEAD
         settingButtonIcon.onClick.AddListener(() => { OpenSettingWindow(); BtnSoundManager.Instance.PlayButtonSound(); });
+=======
+        settingButtonIcon.onClick.AddListener(() => { OpenSettingWindow(); BtnSoundManager.Instance.PlayButtonSound(); OneClearManager.Instance.CloseDisinfectionMode(); });
+>>>>>>> upstream/main
     }
 
     // 자동 할당 코드

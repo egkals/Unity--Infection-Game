@@ -66,6 +66,7 @@ public class MainMenuController : MonoBehaviour
     {
         EventTrigger trigger = text.gameObject.GetComponent<EventTrigger>() ?? text.gameObject.AddComponent<EventTrigger>();
         var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+<<<<<<< HEAD
         entry.callback.AddListener((eventData) =>
         {
             if (!isPopupActive)
@@ -74,6 +75,9 @@ public class MainMenuController : MonoBehaviour
                 BtnSoundManager.Instance.PlayButtonSound();
             }
         });
+=======
+        entry.callback.AddListener((eventData) => { if (!isPopupActive) action(); BtnSoundManager.Instance.PlayButtonSound(); });
+>>>>>>> upstream/main
         trigger.triggers.Add(entry);
     }
 
@@ -134,8 +138,13 @@ public class MainMenuController : MonoBehaviour
     {
         Debug.Log("Account Creation Clicked");
         BtnSoundManager.Instance.PlayButtonSound();
+<<<<<<< HEAD
         signupCanvas.SetActive(true);   // 회원가입 창 실행
         isPopupActive = true;           // 팝업 활성 상태로 설정
+=======
+        signupCanvas.SetActive(true);  // 회원가입 창 실행
+        isPopupActive = true; // 팝업 활성 상태로 설정
+>>>>>>> upstream/main
     }
 
     // 설정 메뉴 클릭
@@ -143,7 +152,11 @@ public class MainMenuController : MonoBehaviour
     {
         Debug.Log("Settings Clicked");
         BtnSoundManager.Instance.PlayButtonSound();
+<<<<<<< HEAD
         settingWindow.SetActive(true);  // 설정 창 실행
+=======
+        settingWindow.SetActive(true);// 설정 창 실행
+>>>>>>> upstream/main
     }
 
     // 게임종료 메뉴 클릭

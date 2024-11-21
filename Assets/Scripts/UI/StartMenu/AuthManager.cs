@@ -6,10 +6,18 @@ using System.Collections;
 using System.Runtime.CompilerServices;
 using Unity.VisualScripting;
 using MyApp.UserManagement;
+using System.Runtime.InteropServices;
 
 // 로그인 및 회원가입 관련 기능 매니저
 public class AuthManager : MonoBehaviour
 {
+    [DllImport("user32.dll")]
+    public static extern short GetKeyState(int keyCode);    // WINDOWS API 사용해 Caps lock 판단
+
+    private const int VK_CAPITAL = 0x14;
+
+    public static AuthManager Instance { get; private set; }
+
     // 로그인 관련 객체들
     public TMP_InputField loginIdInputField;
     public TMP_InputField loginPasswdInputField;
@@ -23,7 +31,10 @@ public class AuthManager : MonoBehaviour
 
     private bool isPasswordVisible = false; // 패스워드 보이는지 상태
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> upstream/main
     // 회원가입 관련 객체들
     public TMP_InputField signupUsernameInputField;
     public TMP_InputField signupIdInputField;
@@ -36,17 +47,29 @@ public class AuthManager : MonoBehaviour
     public GameObject loginPopup;  // 로그인 팝업창
     public GameObject signupPopup; // 회원가입 팝업창
     public MainMenuController mainMenuController;
-    public UserManager userManager;
     public TutorialController tutorialController;
 
-    private string id;
-    private string username;
-    private string password;
+    public string id;
+    public string username;
+    public string password;
     private string checkPassword;
     private string step;
 
     private enum AuthMode { Login, SignUp }
     private AuthMode currentMode;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     private void Start()
     {
@@ -67,7 +90,14 @@ public class AuthManager : MonoBehaviour
         signupPopup = Assign(signupPopup, "SignUpCanvas");
         mainMenuController = Assign(mainMenuController, "MainMenuCanvas");
         tutorialController = Assign(tutorialController, "TutorialController");
-        userManager = UserManager.Instance;
+
+        // ID 입력 필드와 비밀번호 입력 필드에 대해 유효성 검사를 추가할 수 있습니다
+        loginIdInputField.onValidateInput += ValidateIDInput;
+        loginPasswdInputField.onValidateInput += ValidatePasswordInput;
+
+        // Toggle button에 대한 클릭 이벤트 설정
+        passwordToggleButton.onClick.AddListener(TogglePasswordVisibility);
+        UpdatePasswordToggleIcon(); // 초기 아이콘 설정
 
         // ID 입력 필드와 비밀번호 입력 필드에 대해 유효성 검사를 추가할 수 있습니다
         loginIdInputField.onValidateInput += ValidateIDInput;
@@ -78,12 +108,17 @@ public class AuthManager : MonoBehaviour
         UpdatePasswordToggleIcon(); // 초기 아이콘 설정
 
         // 로그인 이벤트 트리거 추가
+<<<<<<< HEAD
         AddEventTrigger(loginCloseButton, (data) => OnBackButtonClicked(loginPopup));
             AddEventTrigger(loginButton, (data) => OnAuthButtonClicked(AuthMode.Login));
+=======
+        AddEventTrigger(loginCloseButton, (data) => { OnBackButtonClicked(loginPopup); BtnSoundManager.Instance.PlayButtonSound(); });
+        AddEventTrigger(loginButton, (data) => { OnAuthButtonClicked(AuthMode.Login); BtnSoundManager.Instance.PlayButtonSound(); });
+>>>>>>> upstream/main
 
         // 회원가입 이벤트 트리거 추가
-        AddEventTrigger(signupCloseButton, (data) => OnBackButtonClicked(signupPopup));
-        AddEventTrigger(signupButton, (data) => OnAuthButtonClicked(AuthMode.SignUp));
+        AddEventTrigger(signupCloseButton, (data) => { OnBackButtonClicked(signupPopup); BtnSoundManager.Instance.PlayButtonSound(); });
+        AddEventTrigger(signupButton, (data) => { OnAuthButtonClicked(AuthMode.SignUp); BtnSoundManager.Instance.PlayButtonSound(); });
 
         currentMode = AuthMode.Login; // 초기 모드를 로그인으로 설정
         InitializePopup(); // 초기화
@@ -121,7 +156,11 @@ public class AuthManager : MonoBehaviour
     private char ValidatePasswordInput(string text, int charIndex, char addedChar)
     {
         // 영어 알파벳 소문자 또는 숫자인 경우에만 입력을 허용
+<<<<<<< HEAD
         if (char.IsLower(addedChar) || char.IsDigit(addedChar))
+=======
+        if (char.IsLower(addedChar) || char.IsDigit(addedChar) || char.IsPunctuation(addedChar) || char.IsSymbol(addedChar))
+>>>>>>> upstream/main
         {
             return addedChar;
         }
@@ -193,14 +232,51 @@ public class AuthManager : MonoBehaviour
         }
 
         // 비밀번호 입력 필드에 포커스되어 있을 때 IME 끄기
+<<<<<<< HEAD
         if (loginPasswdInputField.isFocused || signUpPasswdInputField.isFocused || signUpCheckpasswdInputField.isFocused)
+=======
+        if (loginPasswdInputField.isFocused || signUpPasswdInputField.isFocused || signUpCheckpasswdInputField.isFocused || loginIdInputField.isFocused || signupIdInputField.isFocused)
+>>>>>>> upstream/main
         {
             Input.imeCompositionMode = IMECompositionMode.Off;
         }
         else
         {
+<<<<<<< HEAD
             Input.imeCompositionMode = IMECompositionMode.Auto;
         }
+=======
+            // 회원가입의 이름 입력 필드에 포커스되어 있을 때 IME를 활성화
+            if (signupUsernameInputField.isFocused)
+            {
+                Input.imeCompositionMode = IMECompositionMode.On;
+            }
+            else
+            {
+                Input.imeCompositionMode = IMECompositionMode.Auto;
+            }
+        }
+
+        // Caps Lock 상태 확인
+        if (IsCapsLockOn())
+        {
+            DisplayMessage("Caps Lock이 켜져 있습니다", Color.red);
+        }
+        else
+        {
+            TMP_Text messageText = GetCurrentMessageText();
+            if (messageText.text == "Caps Lock이 켜져 있습니다")
+            {
+                messageText.text = ""; // Caps Lock이 꺼졌을 때 메시지를 지움
+            }
+        }
+    }
+
+    // Caps Lock 상태 확인 함수
+    private bool IsCapsLockOn()
+    {
+        return (GetKeyState(VK_CAPITAL) & 0x0001) != 0;
+>>>>>>> upstream/main
     }
 
     // 첫번째 입력 필드를 찾는 함수
@@ -221,7 +297,11 @@ public class AuthManager : MonoBehaviour
     private void OnBackButtonClicked(GameObject popup)
     {
         Debug.Log("Back Button Clicked");
+<<<<<<< HEAD
         BtnSoundManager.Instance.PlayButtonSound();  // 사운드 추가
+=======
+        BtnSoundManager.Instance.PlayButtonSound();
+>>>>>>> upstream/main
         InitializePopup(); // 팝업 초기화 (적혀있는 내용 삭제)
         popup.SetActive(false);
         mainMenuController.EnableMenuInteraction(); // 메뉴 버튼 상호작용 가능하게 설정
@@ -289,15 +369,16 @@ public class AuthManager : MonoBehaviour
     {
         GameDataManager gameDataMager = GameDataManager.Instance;
         ResearchDBManager researchDBManager = ResearchDBManager.Instance;
+        TutorialController tutorialController = FindObjectOfType<TutorialController>();
 
-        if (userManager.ValidateUser(id, password))
+        // 아이디 유효성 검사
+        if (!UserManager.Instance.IsIDExists(id))
         {
-            // 게임 데이터에 유저 정보 저장
-            gameDataMager.userId = id;
-            gameDataMager.userName = userManager.GetNameById(id);
-            researchDBManager.userNum = id;
-            researchDBManager.userName = userManager.GetNameById(id);
+            DisplayMessage("사용자 정보가 존재하지 않습니다.", Color.red);
+            return;
+        }
 
+<<<<<<< HEAD
             // 유저의 튜토리얼 진행 여부 반환
             int tutorialStatus = userManager.GetUserTutorialStatus(id);
             if (tutorialStatus == 0)
@@ -310,17 +391,41 @@ public class AuthManager : MonoBehaviour
                 tutorialController.SetTutorialCompletionStatus(true);
                 Debug.Log("Tutorial: 이미 true임");
             }
+=======
+        // 비밀번호 유효성 검사
+        if (!UserManager.Instance.ValidateUser(id, password))
+        {
+            DisplayMessage("비밀번호가 틀렸습니다.", Color.red);
+            return;
+        }
+>>>>>>> upstream/main
 
-            // 확인된 유저 정보를 바탕으로 게임 데이터 테이블에 데이터 추가
-            gameDataMager.InsertInitialData();
-            researchDBManager.SendResearchDataToServer();
-            StartCoroutine(LoginSuccessCoroutine());
+        // 게임 데이터에 유저 정보 저장
+        string name = UserManager.Instance.GetNameById(id);
+        gameDataMager.userId = id;
+        gameDataMager.userName = name;
+        researchDBManager.userNum = id;
+        researchDBManager.userName = name;
+        tutorialController.id = id;
+        tutorialController.username = name;
+
+        // 유저의 튜토리얼 진행 여부 반환
+        int tutorialStatus = UserManager.Instance.GetUserTutorialStatus(id);
+        if (tutorialStatus == 0)
+        {
+            tutorialController.SetTutorialCompletionStatus(false);
         }
         else
         {
-            DisplayMessage("사용자 정보가 존재하지 않습니다.", Color.red);
+            tutorialController.SetTutorialCompletionStatus(true);
         }
+
+        // 확인된 유저 정보를 바탕으로 게임 데이터 테이블에 데이터 추가
+        gameDataMager.InsertInitialData();
+        researchDBManager.SendResearchDataToServer();
+        StartCoroutine(LoginSuccessCoroutine());
     }
+
 
     // 회원가입 처리
     private void HandleSignUp()
@@ -331,7 +436,7 @@ public class AuthManager : MonoBehaviour
             return;
         }
 
-        if (userManager.IsIDExists(id))
+        if (UserManager.Instance.IsIDExists(id))
         {
             DisplayMessage("이미 존재하는 사원번호입니다.", Color.red);
             return;
@@ -355,7 +460,11 @@ public class AuthManager : MonoBehaviour
             return;
         }
 
+<<<<<<< HEAD
         UserManager.Instance.AddUser(id, username, password, 0, 0, 0, 0);
+=======
+        UserManager.Instance.AddUser(id, username, password, 0, " ", " ", " ");
+>>>>>>> upstream/main
         DisplayMessage("회원가입 성공!\n로그인 화면으로 이동해주세요.", Color.green);
         StartCoroutine(CompleteSignUp());
     }
@@ -363,20 +472,20 @@ public class AuthManager : MonoBehaviour
     // 회원가입 완료 로그 1.8초 동안 보여주고 창 종료
     IEnumerator CompleteSignUp()
     {
-        yield return new WaitForSeconds(1.8f);
+        yield return YieldInstructionCache.WaitForSeconds(1.8f);
         OnBackButtonClicked(signupPopup);
     }
 
     // ID 유효성 검사
     private bool IsValidID(string id)
     {
-        return id.Length >= 1 && id.Length <= 10 && userManager.IsValidID(id);
+        return id.Length >= 1 && id.Length <= 10 && UserManager.Instance.IsValidID(id);
     }
 
     // 이름 유효성 검사
     private bool IsValidUsername(string username)
     {
-        return username.Length >= 1 && username.Length <= 11 && userManager.IsValidUsername(username);
+        return username.Length >= 1 && username.Length <= 11 && UserManager.Instance.IsValidUsername(username);
     }
 
     // 비밀번호 유효성 검사
@@ -424,13 +533,13 @@ public class AuthManager : MonoBehaviour
             {
                 loginMessageText.text = "접속 중입니다..";
                 loginMessageText.color = Color.green;
-                yield return new WaitForSeconds(1);
+                yield return YieldInstructionCache.WaitForSeconds(1);
             }
             else
             {
                 loginMessageText.text = $"로그인 성공! {i}초 후에 접속됩니다..";
                 loginMessageText.color = Color.green;
-                yield return new WaitForSeconds(1);
+                yield return YieldInstructionCache.WaitForSeconds(1);
             }
         }
         GoToGame.Instance.StartGame();

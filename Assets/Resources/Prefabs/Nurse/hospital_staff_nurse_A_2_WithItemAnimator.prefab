@@ -304,6 +304,9 @@ PrefabInstance:
     - {fileID: 2351147194647691813, guid: ab97ccabef9348c46b00ab5ded832f36, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 2351147194647993925, guid: ab97ccabef9348c46b00ab5ded832f36, type: 3}
+      insertIndex: 0
+      addedObject: {fileID: 3755988344222568578}
+    - targetCorrespondingSourceObject: {fileID: 2351147194647993925, guid: ab97ccabef9348c46b00ab5ded832f36, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2302286761511077552}
     m_AddedComponents:
@@ -626,7 +629,7 @@ NavMeshAgent:
   m_Height: 1
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 0
 --- !u!114 &3101190785611296469
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -657,6 +660,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   createVirusManager: {fileID: 0}
+  selectedLevel: {fileID: 0}
 --- !u!114 &5017101617942239593
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -669,6 +673,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab7a2f30f9bdc4d438c10609ab7cd004, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isInCurrentWard: 0
+  currentWard: 
   animator: {fileID: 0}
   standingState: 0
   agent: {fileID: 0}
@@ -677,6 +683,7 @@ MonoBehaviour:
   ward: 0
   isWaiting: 0
   personComponent: {fileID: 0}
+  infectionController: {fileID: 0}
   num: 0
   role: 0
   isWorking: 0
@@ -685,3 +692,65 @@ MonoBehaviour:
   isReturning: 0
   doctor: {fileID: 0}
   chair: {fileID: 0}
+--- !u!1001 &8512560841601687120
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3448013817274678694}
+    m_Modifications:
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8402798249211703157, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+      propertyPath: m_Name
+      value: ProtectedGear
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+--- !u!4 &3755988344222568578 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4773045415798197970, guid: cf88f33ac32349246b5e64b9f0f622d3, type: 3}
+  m_PrefabInstance: {fileID: 8512560841601687120}
+  m_PrefabAsset: {fileID: 0}

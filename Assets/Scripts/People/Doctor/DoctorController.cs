@@ -21,7 +21,6 @@ public class DoctorController : NPCController
     public bool isWorking = false;
 
     public static List<PatientController> ERWaitingList = new List<PatientController>();
-    //public static List<PatientController> ICUWaitingList = new List<PatientController>();
 
     private void Start()
     {
@@ -34,26 +33,8 @@ public class DoctorController : NPCController
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (isResting)
-        {
-            return;
-        }
-        // 애니메이션
         Managers.NPCManager.UpdateAnimation(agent, animator);
-
-
-
-        //if (patientCount >= patientMaxCount && waypoints[1] is DoctorOffice doctorOffice)
-        //{
-        //    if (doctorOffice.waitingQueue.Count == 0 && doctorOffice.isEmpty)
-        //    {
-        //        StartCoroutine(Rest());
-        //        DoctorCreator.Instance.ChangeDoctor(gameObject);
-        //        return;
-        //    }
-        //}
-
-        if (isWaiting)
+        if (isResting || isWaiting)
         {
             return;
         }
@@ -78,7 +59,7 @@ public class DoctorController : NPCController
     private IEnumerator WardDoctorMove()
     {
         isWaiting = true;
-        yield return new WaitForSeconds(1.5f);
+        yield return YieldInstructionCache.WaitForSeconds(1.5f);
 
 
         if (!agent.isOnNavMesh)
@@ -105,14 +86,14 @@ public class DoctorController : NPCController
                     agent.SetDestination(new Vector3(chair.transform.position.x, chair.transform.position.y, chair.transform.position.z - 0.5f));
                 }
                 yield return new WaitUntil(() => Managers.NPCManager.isArrived(agent));
-                yield return new WaitForSeconds(1.0f);
+                yield return YieldInstructionCache.WaitForSeconds(1.0f);
                 transform.eulerAngles = chair.transform.rotation.eulerAngles;
                 Managers.NPCManager.PlaySittingAnimation(this);
             }
             else
             {
                 Managers.NPCManager.PlayWakeUpAnimation(this);
-                yield return new WaitForSeconds(1.0f);
+                yield return YieldInstructionCache.WaitForSeconds(1.0f);
                 Vector3 outpatientLocation = Managers.NPCManager.GetPositionInFront(transform, patient.transform, 0.75f);
                 agent.SetDestination(outpatientLocation);
                 yield return new WaitUntil(() => Managers.NPCManager.isArrived(agent));
@@ -128,23 +109,29 @@ public class DoctorController : NPCController
         if (ERWaitingList.Count > 0)
         {
             isWorking = true;
-            int random = Random.Range(0, ERWaitingList.Count);
+            int random = 0;
+            do
+            {
+                random = Random.Range(0, ERWaitingList.Count);
+            } while (ERWaitingList[random].bedWaypoint == null);
             patient = ERWaitingList[random].gameObject;
             agent.SetDestination(ERWaitingList[random].bedWaypoint.GetRandomPointInRange());
-            yield return new WaitForSeconds(2.0f);
             yield return new WaitUntil(() => Managers.NPCManager.isArrived(agent));
+            if(ERWaitingList[random].bedWaypoint == null || random >= ERWaitingList.Count)
+            {
+                isWaiting = false;
+                yield break;
+            }
             transform.LookAt(ERWaitingList[random].bedWaypoint.bedGameObject.transform);
-            yield return new WaitForSeconds(2.0f);
+            yield return YieldInstructionCache.WaitForSeconds(2.0f);
             ERWaitingList[random].doctorSignal = true;
             ERWaitingList.RemoveAt(random);
-            isWaiting = false;
-            yield break;
         }
         else
         {
             isWorking = false;
             agent.SetDestination(waypoints[0].GetRandomPointInRange());
-            yield return new WaitForSeconds(2.0f);
+            yield return YieldInstructionCache.WaitForSeconds(2.0f);
         }
         isWaiting = false;
     }
@@ -152,7 +139,7 @@ public class DoctorController : NPCController
     public IEnumerator ICUDoctorMove()
     {
         isWaiting = true;
-        yield return new WaitForSeconds(2.0f);
+        yield return YieldInstructionCache.WaitForSeconds(2.0f);
         int randomBed = Random.Range(2, waypoints.Count);
         if (waypoints[randomBed] is BedWaypoint bed)
         {
@@ -162,7 +149,7 @@ public class DoctorController : NPCController
                 agent.SetDestination(waypoints[randomBed].GetRandomPointInRange());
                 yield return new WaitUntil(() => Managers.NPCManager.isArrived(agent));
                 transform.LookAt(bed.patient.transform);
-                yield return new WaitForSeconds(2.0f);
+                yield return YieldInstructionCache.WaitForSeconds(2.0f);
             }
             else
             {
@@ -177,7 +164,7 @@ public class DoctorController : NPCController
         isResting = true;
         if (!changeSignal)
         {
-            yield return new WaitForSeconds(1);
+            yield return YieldInstructionCache.WaitForSeconds(1);
         }
         isResting = false;
         changeSignal = false;

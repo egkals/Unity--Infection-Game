@@ -121,12 +121,16 @@ public class ResearchEnhancement : MonoBehaviour
             button = image.gameObject.AddComponent<Button>();
         }
         button.onClick.RemoveAllListeners();
+<<<<<<< HEAD
         button.onClick.AddListener(() =>
         {
             onClick();
             BtnSoundManager.Instance.PlayButtonSound();
 
         });
+=======
+        button.onClick.AddListener(() => { onClick(); BtnSoundManager.Instance.PlayButtonSound(); });
+>>>>>>> upstream/main
     }
 
     private void SetupResearchButton(Image image, System.Action onClick)
@@ -143,11 +147,15 @@ public class ResearchEnhancement : MonoBehaviour
             button = image.gameObject.AddComponent<Button>();
         }
         button.onClick.RemoveAllListeners();
+<<<<<<< HEAD
         button.onClick.AddListener(() =>
         {
             onClick();
             BtnSoundManager.Instance.PlayButtonSound(); // 연구 버튼 클릭 시 사운드 재생
         });
+=======
+        button.onClick.AddListener(() => { onClick(); BtnSoundManager.Instance.PlayButtonSound(); });
+>>>>>>> upstream/main
     }
 
     public void OnResearchButtonClick()
